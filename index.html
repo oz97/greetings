@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Christmas Card Creator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+        }
+        .font-title {
+            font-family: 'Playfair Display', serif;
+        }
+        .card-text {
+            text-shadow: 0px 2px 5px rgba(0,0,0,0.7);
+        }
+        .bg-cover-center {
+            background-size: cover;
+            background-position: center;
+        }
+        .step-indicator {
+            transition: all 0.3s ease-in-out;
+        }
+        .item-selector {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            background-color: rgba(255,255,255,0.05);
+        }
+        .item-selector:hover {
+            transform: scale(1.05);
+            background-color: rgba(255,255,255,0.1);
+        }
+        .item-selector.selected {
+            box-shadow: 0 0 0 4px #FBBF24; /* amber-400 */
+            transform: scale(1.05);
+            background-color: rgba(251, 191, 36, 0.2);
+        }
+        .greeting-option {
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+        }
+        .greeting-option.selected {
+            background-color: #166534; /* green-800 */
+            border-color: #FBBF24; /* amber-400 */
+            color: white;
+        }
+        /* Snow animation */
+        @keyframes fall {
+          0% {transform: translateY(-100%);}
+          100% {transform: translateY(100vh);}
+        }
+        .snowflake {
+          position: absolute;
+          top: -10px;
+          color: white;
+          font-size: 1.5rem;
+          opacity: 0.7;
+          animation: fall linear infinite;
+          z-index: -1;
+        }
+        /* Card decoration overlay */
+        .decoration-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding-top: 5%;
+        }
+        .decoration-overlay img {
+            width: 20%;
+            max-width: 80px;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4));
+        }
+         /* UI Decorations */
+        .control-panel {
+            position: relative;
+        }
+        .control-panel::before, .control-panel::after {
+            content: '🎁';
+            position: absolute;
+            font-size: 2rem;
+            opacity: 0.3;
+        }
+        .control-panel::before {
+            top: 10px;
+            left: 10px;
+        }
+        .control-panel::after {
+            bottom: 10px;
+            right: 10px;
+            transform: rotate(15deg);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white overflow-x-hidden">
+
+    <div id="snow-container" class="fixed top-0 left-0 w-full h-full pointer-events-none z-0"></div>
+
+    <div id="creator-view" class="relative z-10 p-4 sm:p-6 md:p-8 max-w-7xl mx-auto">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl md:text-6xl font-title text-red-500">Christmas Card Creator</h1>
+            <p class="mt-2 text-lg text-gray-300">Create and send a magical, personal card in a few simple steps</p>
+        </header>
+
+        <div class="flex justify-center mb-8">
+            <div class="flex items-center space-x-1 sm:space-x-2 bg-gray-800 p-2 rounded-full text-xs sm:text-base">
+                <div id="step-indicator-1" class="step-indicator w-20 sm:w-24 text-center py-2 px-1 sm:px-4 rounded-full bg-red-600">Step 1</div>
+                <div id="step-indicator-2" class="step-indicator w-20 sm:w-24 text-center py-2 px-1 sm:px-4 rounded-full">Step 2</div>
+                <div id="step-indicator-3" class="step-indicator w-20 sm:w-24 text-center py-2 px-1 sm:px-4 rounded-full">Step 3</div>
+                <div id="step-indicator-4" class="step-indicator w-20 sm:w-24 text-center py-2 px-1 sm:px-4 rounded-full">Step 4</div>
+                <div id="step-indicator-5" class="step-indicator w-20 sm:w-24 text-center py-2 px-1 sm:px-4 rounded-full">Finish</div>
+            </div>
+        </div>
+
+        <main class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+            <div class="control-panel bg-gray-800 p-6 rounded-2xl shadow-lg">
+                <div id="step-1">
+                    <h2 class="text-2xl font-bold mb-4 text-amber-400">1. Choose Your Greeting</h2>
+                    <div id="greetings-container" class="space-y-3"></div>
+                </div>
+
+                <div id="step-2" class="hidden">
+                    <h2 class="text-2xl font-bold mb-4 text-amber-400">2. Add Your Name</h2>
+                    <p class="text-gray-400 mb-2">To make your card personal!</p>
+                    <input type="text" id="sender-name" placeholder="E.g., The Millers" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-400 focus:outline-none text-white">
+                </div>
+
+                <div id="step-3" class="hidden">
+                    <h2 class="text-2xl font-bold mb-4 text-amber-400">3. Select a Background</h2>
+                    <div id="backgrounds-container" class="grid grid-cols-2 sm:grid-cols-3 gap-4"></div>
+                </div>
+
+                <div id="step-4" class="hidden">
+                    <h2 class="text-2xl font-bold mb-4 text-amber-400">4. Add Decorations</h2>
+                    <p class="text-gray-400 mb-4">Click an icon to add it to your card.</p>
+                    <div id="decorations-container" class="grid grid-cols-3 sm:grid-cols-4 gap-4"></div>
+                </div>
+                
+                <div id="step-5" class="hidden text-center">
+                    <h2 class="text-2xl font-bold mb-2 text-green-400">Your card is ready!</h2>
+                    <p class="text-gray-300 mb-4">Copy the link and send it to your friends and family.</p>
+                    <div class="relative bg-gray-900 p-3 rounded-lg mb-4">
+                        <input id="shareable-link" type="text" readonly class="w-full bg-transparent text-gray-400 text-sm text-center outline-none pl-10">
+                        <button id="copy-link-btn" class="absolute left-2 top-1/2 -translate-y-1/2 p-2 text-gray-300 hover:text-white" title="Copy Link">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                        </button>
+                    </div>
+                    <div id="copy-feedback" class="text-green-400 h-5"></div>
+                    <div class="flex justify-center space-x-4 mt-4">
+                        <a id="share-whatsapp" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-full flex items-center transition-transform transform hover:scale-105" href="#" target="_blank">
+                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 16 16"><path d="M13.601 2.326A7.854 7.854 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.933 7.933 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.898 7.898 0 0 0 13.6 2.326zM7.994 14.521a6.573 6.573 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.557 6.557 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592zm3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.729.729 0 0 0-.529.247c-.182.198-.691.677-.691 1.654 0 .977.71 1.916.81 2.049.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943s-.182-.15-.38-.25z"/></svg>
+                            Share on WhatsApp
+                        </a>
+                        <a id="share-email" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-full flex items-center transition-transform transform hover:scale-105" href="#">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="currentColor" viewBox="0 0 16 16"><path d="M.05 3.555A2 2 0 0 1 2 2h12a2 2 0 0 1 1.95 1.555L8 8.414.05 3.555zM0 4.697v7.104l5.803-3.558L0 4.697zM6.761 8.83l-6.57 4.027A2 2 0 0 0 2 14h12a2 2 0 0 0 1.808-1.144l-6.57-4.027L8 9.586l-1.239-.757zm3.436-.586L16 11.803V4.697l-5.803 3.558z"/></svg>
+                            Share via Email
+                        </a>
+                    </div>
+                </div>
+
+                <div class="mt-8 flex justify-between">
+                    <button id="prev-btn" class="bg-gray-600 hover:bg-gray-500 text-white font-bold py-2 px-6 rounded-lg transition invisible">Previous</button>
+                    <button id="next-btn" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>Next</button>
+                </div>
+            </div>
+
+            <!-- Right Side: Preview -->
+            <div class="sticky top-8">
+                <h3 class="text-xl font-bold text-center mb-4">Live Preview</h3>
+                <div id="preview-card" class="relative w-full aspect-[9/16] bg-cover-center rounded-2xl shadow-2xl flex flex-col justify-center items-center p-8 text-center text-white transition-all duration-500 bg-gray-700">
+                    <div id="decoration-overlay-preview" class="decoration-overlay"></div>
+                    <p id="preview-text" class="card-text text-2xl md:text-3xl lg:text-4xl font-semibold"></p>
+                    <p id="preview-sender" class="card-text text-lg md:text-xl mt-4"></p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Final Card View (for shared links) -->
+    <div id="card-view" class="hidden min-h-screen w-full flex flex-col items-center justify-center p-4">
+        <div id="final-card" class="relative w-full max-w-md aspect-[9/16] bg-cover-center rounded-2xl shadow-2xl flex flex-col justify-center items-center p-8 text-center text-white">
+            <div id="decoration-overlay-final" class="decoration-overlay"></div>
+            <p id="final-text" class="card-text text-3xl md:text-4xl lg:text-5xl font-semibold"></p>
+            <p id="final-sender" class="card-text text-xl md:text-2xl mt-6"></p>
+        </div>
+        <a href="/" class="mt-8 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-full transition-transform transform hover:scale-105">
+            Create your own card!
+        </a>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- DATA ---
+        const greetings = [
+            { id: 1, text: "Wishing you a magical and blissful holiday! May the Christmas season fill your home with joy, your heart with love, and your life with laughter." },
+            { id: 2, text: "Merry Christmas! May the beautiful lights of every Christmas tree remind you of the amazing person you are. Hope you have a wonderful time." },
+            { id: 3, text: "Hoping Santa Claus brings you everything you wished for! May your holidays sparkle with moments of love, laughter, and goodwill." },
+            { id: 4, text: "It’s the most wonderful time of the year! Sending you warm wishes and hoping your Christmas is as special and unique as you are." },
+            { id: 5, text: "May the holiday season end the present year on a cheerful note and make way for a fresh and bright New Year. Merry Christmas and a Happy New Year!" },
+            { id: 6, text: "Let's be naughty and save Santa a trip. Hope your Christmas is full of fun and your plate is full of cookies!" },
+            { id: 7, text: "Thinking of you this season and wishing you a joyful Christmas. You are the best gift I could ask for." },
+        ];
+
+        const backgrounds = [
+            { id: 1, url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cb/Rovaniemi_winter.jpg/1024px-Rovaniemi_winter.jpg' },
+            { id: 2, url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Christmas_tree_with_presents.jpg/800px-Christmas_tree_with_presents.jpg' },
+            { id: 3, url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Christmas_lights_in_the_snow.jpg/800px-Christmas_lights_in_the_snow.jpg' },
+            { id: 4, url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d2/Red-nosed_reindeer.jpg/1024px-Red-nosed_reindeer.jpg' },
+            { id: 5, url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/44/Christmas_fireplace.jpg/800px-Christmas_fireplace.jpg' },
+            { id: 6, url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Santa_Claus_in_Rovaniemi.jpg/800px-Santa_Claus_in_Rovaniemi.jpg' },
+            { id: 7, url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Flickr_-_donhomer_-_xmas_baubles.jpg/1024px-Flickr_-_donhomer_-_xmas_baubles.jpg' },
+            { id: 8, url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Tannenzweig.jpg/1024px-Tannenzweig.jpg' },
+        ];
+        
+        const decorations = [
+            { id: 1, url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Christmas_tree_icon_with_stars.svg/1024px-Christmas_tree_icon_with_stars.svg.png', name: 'Tree' },
+            { id: 2, url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/A_stylised_snowman.svg/768px-A_stylised_snowman.svg.png', name: 'Snowman' },
+            { id: 3, url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Silly_reindeer_-_transparent_background.svg/1024px-Silly_reindeer_-_transparent_background.svg.png', name: 'Reindeer' },
+            { id: 4, url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Gift_-_Noun_Project_5045.svg/1024px-Gift_-_Noun_Project_5045.svg.png', name: 'Present' }
+        ];
+
+        // --- STATE ---
+        let currentStep = 1;
+        const MAX_STEPS = 5;
+        let selectedCard = {
+            greetingId: null,
+            senderName: '',
+            backgroundId: backgrounds[0].id,
+            decorationId: null,
+        };
+
+        // --- DOM ELEMENTS ---
+        const getEl = (id) => document.getElementById(id);
+        const creatorView = getEl('creator-view');
+        const cardView = getEl('card-view');
+        const steps = Array.from({length: MAX_STEPS}, (_, i) => getEl(`step-${i + 1}`));
+        const indicators = Array.from({length: MAX_STEPS}, (_, i) => getEl(`step-indicator-${i + 1}`));
+        const nextBtn = getEl('next-btn');
+        const prevBtn = getEl('prev-btn');
+        const greetingsContainer = getEl('greetings-container');
+        const backgroundsContainer = getEl('backgrounds-container');
+        const decorationsContainer = getEl('decorations-container');
+        const senderNameInput = getEl('sender-name');
+        
+        // Preview elements
+        const previewCard = getEl('preview-card');
+        const previewText = getEl('preview-text');
+        const previewSender = getEl('preview-sender');
+        const previewDecorationOverlay = getEl('decoration-overlay-preview');
+
+        // Share elements
+        const shareableLinkInput = getEl('shareable-link');
+        const copyLinkBtn = getEl('copy-link-btn');
+        const copyFeedback = getEl('copy-feedback');
+        
+        // Final card elements
+        const finalCard = getEl('final-card');
+        const finalText = getEl('final-text');
+        const finalSender = getEl('final-sender');
+        const finalDecorationOverlay = getEl('decoration-overlay-final');
+
+        // --- FUNCTIONS ---
+        function init() {
+            const params = new URLSearchParams(window.location.hash.substring(1));
+            const gId = params.get('g');
+            const name = params.get('n');
+            const bgId = params.get('b');
+            const dId = params.get('d');
+
+            if (gId && name && bgId) {
+                displayFinalCard(gId, name, bgId, dId);
+            } else {
+                initCreator();
+            }
+            createSnowflakes();
+        }
+
+        function displayFinalCard(gId, name, bgId, dId) {
+            creatorView.classList.add('hidden');
+            cardView.classList.remove('hidden');
+            cardView.classList.add('flex');
+
+            const greeting = greetings.find(g => g.id == gId);
+            const background = backgrounds.find(b => b.id == bgId);
+            const decoration = decorations.find(d => d.id == dId);
+
+            if (greeting) finalText.textContent = greeting.text;
+            finalSender.textContent = `With love, ${decodeURIComponent(name)}`;
+            if (background) finalCard.style.backgroundImage = `url('${background.url}')`;
+            if (decoration) {
+                finalDecorationOverlay.innerHTML = `<img src="${decoration.url}" alt="${decoration.name}" />`;
+            }
+        }
+
+        function initCreator() {
+            creatorView.classList.remove('hidden');
+            cardView.classList.add('hidden');
+
+            populateGreetings();
+            populateBackgrounds();
+            populateDecorations();
+            
+            senderNameInput.addEventListener('input', handleNameInput);
+            nextBtn.addEventListener('click', handleNext);
+            prevBtn.addEventListener('click', handlePrev);
+            copyLinkBtn.addEventListener('click', handleCopy);
+
+            updatePreview();
+            updateStepView();
+        }
+        
+        function populateFactory(container, items, type) {
+            items.forEach(item => {
+                const div = document.createElement('div');
+                div.dataset.id = item.id;
+                
+                if(type === 'greeting') {
+                    div.className = 'greeting-option p-4 border-2 border-gray-600 rounded-lg cursor-pointer hover:bg-gray-700';
+                    div.textContent = item.text;
+                } else {
+                    div.className = 'item-selector w-full aspect-square bg-cover-center rounded-lg cursor-pointer border-2 border-transparent flex items-center justify-center p-2';
+                    if (type === 'background') {
+                         div.style.backgroundImage = `url('${item.url}')`;
+                    } else if (type === 'decoration') {
+                         div.innerHTML = `<img src="${item.url}" alt="${item.name}" class="max-h-full max-w-full object-contain">`;
+                    }
+                }
+
+                div.addEventListener('click', () => {
+                    const selectedKey = `${type}Id`;
+                    selectedCard[selectedKey] = item.id;
+                    
+                    container.querySelectorAll('.selected').forEach(el => el.classList.remove('selected'));
+                    div.classList.add('selected');
+                    
+                    updatePreview();
+                    validateStep();
+                });
+                container.appendChild(div);
+            });
+        }
+        
+        function populateGreetings() { populateFactory(greetingsContainer, greetings, 'greeting'); }
+        function populateBackgrounds() { populateFactory(backgroundsContainer, backgrounds, 'background'); }
+        function populateDecorations() { populateFactory(decorationsContainer, decorations, 'decoration'); }
+        
+        function handleNameInput(e) {
+            selectedCard.senderName = e.target.value;
+            updatePreview();
+            validateStep();
+        }
+
+        function updatePreview() {
+            const bg = backgrounds.find(b => b.id === selectedCard.backgroundId);
+            if (bg) previewCard.style.backgroundImage = `url('${bg.url}')`;
+
+            const greeting = greetings.find(g => g.id === selectedCard.greetingId);
+            previewText.textContent = greeting ? greeting.text : 'Choose a greeting to start...';
+            
+            previewSender.textContent = selectedCard.senderName ? `With love, ${selectedCard.senderName}` : '';
+            
+            const decoration = decorations.find(d => d.id === selectedCard.decorationId);
+            previewDecorationOverlay.innerHTML = '';
+            if (decoration) {
+                previewDecorationOverlay.innerHTML = `<img src="${decoration.url}" alt="${decoration.name}" />`;
+            }
+        }
+
+        function handleNext() {
+            if (currentStep < MAX_STEPS) {
+                currentStep++;
+                updateStepView();
+            }
+        }
+
+        function handlePrev() {
+            if (currentStep > 1) {
+                currentStep--;
+                updateStepView();
+            }
+        }
+
+        function updateStepView() {
+            steps.forEach((step, index) => step.classList.toggle('hidden', index + 1 !== currentStep));
+            indicators.forEach((indicator, index) => {
+                indicator.classList.toggle('bg-red-600', index < currentStep);
+                indicator.classList.toggle('bg-gray-700', index >= currentStep);
+            });
+
+            prevBtn.classList.toggle('invisible', currentStep === 1);
+            nextBtn.textContent = currentStep === MAX_STEPS - 1 ? 'Finish & Get Link' : 'Next';
+            nextBtn.classList.toggle('hidden', currentStep === MAX_STEPS);
+
+            if (currentStep === MAX_STEPS) generateShareableLink();
+            
+            validateStep();
+        }
+        
+        function validateStep() {
+            let isValid = false;
+            switch(currentStep) {
+                case 1: isValid = selectedCard.greetingId !== null; break;
+                case 2: isValid = selectedCard.senderName.trim() !== ''; break;
+                case 3: isValid = selectedCard.backgroundId !== null; break;
+                case 4: isValid = true; break; // Decoration is optional
+                default: isValid = true;
+            }
+            nextBtn.disabled = !isValid;
+        }
+
+        function generateShareableLink() {
+            const baseUrl = window.location.href.split('#')[0];
+            const params = new URLSearchParams({
+                g: selectedCard.greetingId,
+                n: encodeURIComponent(selectedCard.senderName),
+                b: selectedCard.backgroundId
+            });
+            if(selectedCard.decorationId) {
+                params.append('d', selectedCard.decorationId);
+            }
+            const link = `${baseUrl}#${params.toString()}`;
+            shareableLinkInput.value = link;
+
+            const shareText = encodeURIComponent(`I sent you a Christmas card! 🎄\n${link}`);
+            getEl('share-whatsapp').href = `https://api.whatsapp.com/send?text=${shareText}`;
+            getEl('share-email').href = `mailto:?subject=${encodeURIComponent('A Christmas Card For You!')}&body=${shareText}`;
+        }
+        
+        function handleCopy() {
+            shareableLinkInput.select();
+            document.execCommand('copy');
+            copyFeedback.textContent = 'Link copied!';
+            setTimeout(() => { copyFeedback.textContent = ''; }, 2000);
+        }
+
+        function createSnowflakes() {
+            const snowContainer = getEl('snow-container');
+            if (!snowContainer) return;
+            const numberOfFlakes = 50;
+            for (let i = 0; i < numberOfFlakes; i++) {
+                const flake = document.createElement('div');
+                flake.className = 'snowflake';
+                flake.innerHTML = '❄️';
+                flake.style.left = `${Math.random() * 100}vw`;
+                flake.style.animationDuration = `${Math.random() * 5 + 5}s`;
+                flake.style.animationDelay = `${Math.random() * 5}s`;
+                flake.style.opacity = Math.random();
+                flake.style.fontSize = `${Math.random() * 1 + 0.5}rem`;
+                snowContainer.appendChild(flake);
+            }
+        }
+
+        init();
+    });
+    </script>
+</body>
+</html>
